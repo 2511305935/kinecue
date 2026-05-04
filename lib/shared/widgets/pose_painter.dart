@@ -1,10 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
+/// 全部骨骼连线（14 条）。
+const allConnections = [
+  [PoseLandmarkType.nose, PoseLandmarkType.leftEar],
+  [PoseLandmarkType.nose, PoseLandmarkType.rightEar],
+  [PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder],
+  [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftElbow],
+  [PoseLandmarkType.leftElbow, PoseLandmarkType.leftWrist],
+  [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightElbow],
+  [PoseLandmarkType.rightElbow, PoseLandmarkType.rightWrist],
+  [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftHip],
+  [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightHip],
+  [PoseLandmarkType.leftHip, PoseLandmarkType.rightHip],
+  [PoseLandmarkType.leftHip, PoseLandmarkType.leftKnee],
+  [PoseLandmarkType.leftKnee, PoseLandmarkType.leftAnkle],
+  [PoseLandmarkType.rightHip, PoseLandmarkType.rightKnee],
+  [PoseLandmarkType.rightKnee, PoseLandmarkType.rightAnkle],
+];
+
 /// 将骨骼关键点和连线绘制到摄像头预览上方。
 ///
-/// [kneeAngle]、[hipAngle]、[ankleAngle] 不为 null 时，在对应关节旁叠加角度文字。
-/// [highlightedJoints] 不为空时，两端点均在集合内的连线绘制为红色（错误提示）。
+/// [monitoredConnections] 指定监控区连线（粗线，状态着色）。
+/// [monitoredLandmarks] 指定监控区关节点（大点，状态着色）。
+/// [angleLabels] 指定在哪个关节旁显示什么角度值。
+/// [highlightedJoints] 两端点均在集合内的连线绘制为红色。
+/// [isGood] 为 true 时监控区线条变绿。
 class PosePainter extends CustomPainter {
   PosePainter({
     required this.poses,
@@ -14,9 +35,9 @@ class PosePainter extends CustomPainter {
     required this.coverScale,
     required this.coverOffsetX,
     required this.coverOffsetY,
-    this.kneeAngle,
-    this.hipAngle,
-    this.ankleAngle,
+    required this.monitoredConnections,
+    required this.monitoredLandmarks,
+    this.angleLabels = const [],
     this.highlightedJoints = const {},
     this.isGood = false,
   });
@@ -28,49 +49,19 @@ class PosePainter extends CustomPainter {
   final double coverScale;
   final double coverOffsetX;
   final double coverOffsetY;
-  final double? kneeAngle;
-  final double? hipAngle;
-  final double? ankleAngle;
-  /// 两端点均在此集合内的连线将以红色绘制。
+
+  /// 监控区连线（粗线，白/绿/红）。
+  final List<List<PoseLandmarkType>> monitoredConnections;
+  /// 监控区关键点（大点，白/绿）。
+  final Set<PoseLandmarkType> monitoredLandmarks;
+  /// 在指定关节旁显示角度值：(关节类型, 角度)。
+  final List<(PoseLandmarkType, double?)> angleLabels;
+  /// 两端点均在此集合内的监控区连线绘制为红色。
   final Set<PoseLandmarkType> highlightedJoints;
   /// 动作达标时监控区线条变绿。
   final bool isGood;
 
-  /// 监控区连线：肩-髋（躯干）、髋-膝、膝-踝（下肢）
-  static const _monitoredConnections = [
-    [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftHip],
-    [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightHip],
-    [PoseLandmarkType.leftHip, PoseLandmarkType.leftKnee],
-    [PoseLandmarkType.leftKnee, PoseLandmarkType.leftAnkle],
-    [PoseLandmarkType.rightHip, PoseLandmarkType.rightKnee],
-    [PoseLandmarkType.rightKnee, PoseLandmarkType.rightAnkle],
-  ];
-
-  /// 非监控区连线：头、手臂、横杆
-  static const _secondaryConnections = [
-    [PoseLandmarkType.nose, PoseLandmarkType.leftEar],
-    [PoseLandmarkType.nose, PoseLandmarkType.rightEar],
-    [PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder],
-    [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftElbow],
-    [PoseLandmarkType.leftElbow, PoseLandmarkType.leftWrist],
-    [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightElbow],
-    [PoseLandmarkType.rightElbow, PoseLandmarkType.rightWrist],
-    [PoseLandmarkType.leftHip, PoseLandmarkType.rightHip],
-  ];
-
-  /// 监控区关键点集合（用于区分关节点大小和颜色）
-  static const _monitoredLandmarks = {
-    PoseLandmarkType.leftShoulder,
-    PoseLandmarkType.rightShoulder,
-    PoseLandmarkType.leftHip,
-    PoseLandmarkType.rightHip,
-    PoseLandmarkType.leftKnee,
-    PoseLandmarkType.rightKnee,
-    PoseLandmarkType.leftAnkle,
-    PoseLandmarkType.rightAnkle,
-  };
-
-  // ── 监控区画笔（根据状态动态选择） ─────────────────────────
+  // ── 监控区画笔 ──────────────────────────────────────────
   Paint get _monitoredPaint => Paint()
     ..color = isGood ? Colors.greenAccent : Colors.white
     ..strokeWidth = 5
@@ -95,30 +86,42 @@ class PosePainter extends CustomPainter {
     ..color = Colors.white38
     ..style = PaintingStyle.fill;
 
+  /// 非监控区连线 = 全部连线 - 监控区连线。
+  late final List<List<PoseLandmarkType>> _secondaryConnections = () {
+    final monSet = {
+      for (final c in monitoredConnections) '${c[0]}|${c[1]}',
+    };
+    return [
+      for (final c in allConnections)
+        if (!monSet.contains('${c[0]}|${c[1]}')) c,
+    ];
+  }();
+
   @override
   void paint(Canvas canvas, Size size) {
     for (final pose in poses) {
-      // ① 先画非监控区（底层，不抢视觉）
+      // ① 先画非监控区（底层）
       for (final conn in _secondaryConnections) {
         _drawConn(canvas, pose, conn, _secondaryPaint);
       }
-      // ② 再画监控区（顶层，醒目）
-      for (final conn in _monitoredConnections) {
+      // ② 再画监控区（顶层）
+      for (final conn in monitoredConnections) {
         final isError = highlightedJoints.contains(conn[0]) &&
             highlightedJoints.contains(conn[1]);
         _drawConn(canvas, pose, conn, isError ? _errorLinePaint : _monitoredPaint);
       }
-      // ③ 关节点：监控区大+青，非监控区小+灰
+      // ③ 关节点
       for (final entry in pose.landmarks.entries) {
         final lm = entry.value;
         if (lm.likelihood < 0.5) continue;
-        final isMonitored = _monitoredLandmarks.contains(entry.key);
+        final isMonitored = monitoredLandmarks.contains(entry.key);
         canvas.drawCircle(
           _toScreen(lm.x, lm.y),
           isMonitored ? 6 : 4,
           isMonitored ? _monitoredDotPaint : _secondaryDotPaint,
         );
       }
+      // ④ 角度文字
       _drawAngles(canvas, pose);
     }
   }
@@ -132,10 +135,10 @@ class PosePainter extends CustomPainter {
   }
 
   void _drawAngles(Canvas canvas, Pose pose) {
-    void drawAt(PoseLandmarkType type, double? angle) {
-      if (angle == null) return;
+    for (final (type, angle) in angleLabels) {
+      if (angle == null) continue;
       final lm = pose.landmarks[type];
-      if (lm == null || lm.likelihood < 0.5) return;
+      if (lm == null || lm.likelihood < 0.5) continue;
       final pos = _toScreen(lm.x, lm.y);
       final tp = TextPainter(
         text: TextSpan(
@@ -150,18 +153,8 @@ class PosePainter extends CustomPainter {
       )..layout();
       tp.paint(canvas, pos.translate(8, -8));
     }
-
-    drawAt(PoseLandmarkType.leftKnee, kneeAngle);
-    drawAt(PoseLandmarkType.leftHip, hipAngle);
-    drawAt(PoseLandmarkType.leftAnkle, ankleAngle);
   }
 
-  /// 坐标转换：ML Kit 图像坐标 → 屏幕坐标
-  ///
-  /// iOS 上 ML Kit 返回的 landmark 坐标已是修正后的 portrait 显示坐标。
-  ///   rotation270（前置摄像头）：含内建镜像
-  ///   rotation90（后置摄像头）：无镜像
-  /// 再叠加 BoxFit.cover 的 scale + offset 与预览画面对齐。
   Offset _toScreen(double lx, double ly) {
     double px, py;
 
@@ -189,9 +182,7 @@ class PosePainter extends CustomPainter {
   bool shouldRepaint(PosePainter old) =>
       old.poses != poses ||
       old.coverScale != coverScale ||
-      old.kneeAngle != kneeAngle ||
-      old.hipAngle != hipAngle ||
-      old.ankleAngle != ankleAngle ||
+      old.angleLabels != angleLabels ||
       old.highlightedJoints != highlightedJoints ||
       old.isGood != isGood;
 }

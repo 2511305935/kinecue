@@ -11,41 +11,37 @@ import 'package:kinecue/core/constants/debug_flags.dart';
 import 'package:kinecue/core/constants/pose_thresholds.dart';
 import 'package:kinecue/core/utils/angle_calculator.dart';
 import 'package:kinecue/features/pose_detection/data/pose_detector_service.dart';
-import 'package:kinecue/features/squat_coach/domain/squat_angle_model.dart';
-import 'package:kinecue/features/squat_coach/domain/squat_form_checker.dart';
-import 'package:kinecue/features/squat_coach/domain/squat_phase_detector.dart';
-import 'package:kinecue/features/squat_coach/presentation/squat_feedback_widget.dart';
+import 'package:kinecue/features/bicep_curl_coach/domain/curl_angle_model.dart';
+import 'package:kinecue/features/bicep_curl_coach/domain/curl_form_checker.dart';
+import 'package:kinecue/features/bicep_curl_coach/domain/curl_phase_detector.dart';
+import 'package:kinecue/features/bicep_curl_coach/presentation/curl_feedback_widget.dart';
 import 'package:kinecue/shared/widgets/pose_painter.dart';
 
-class SquatCoachPage extends StatefulWidget {
-  const SquatCoachPage({super.key, required this.cameras});
+class CurlCoachPage extends StatefulWidget {
+  const CurlCoachPage({super.key, required this.cameras});
 
   final List<CameraDescription> cameras;
 
   @override
-  State<SquatCoachPage> createState() => _SquatCoachPageState();
+  State<CurlCoachPage> createState() => _CurlCoachPageState();
 }
 
-class _SquatCoachPageState extends State<SquatCoachPage> {
-  // ── 深蹲监控区配置 ─────────────────────────────────────
-  static const _kSquatMonitoredConnections = [
-    [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftHip],
-    [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightHip],
-    [PoseLandmarkType.leftHip, PoseLandmarkType.leftKnee],
-    [PoseLandmarkType.leftKnee, PoseLandmarkType.leftAnkle],
-    [PoseLandmarkType.rightHip, PoseLandmarkType.rightKnee],
-    [PoseLandmarkType.rightKnee, PoseLandmarkType.rightAnkle],
+class _CurlCoachPageState extends State<CurlCoachPage> {
+  // ── 弯举监控区配置 ─────────────────────────────────────
+  static const _kCurlMonitoredConnections = [
+    [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftElbow],
+    [PoseLandmarkType.leftElbow, PoseLandmarkType.leftWrist],
+    [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightElbow],
+    [PoseLandmarkType.rightElbow, PoseLandmarkType.rightWrist],
   ];
 
-  static const _kSquatMonitoredLandmarks = {
+  static const _kCurlMonitoredLandmarks = {
     PoseLandmarkType.leftShoulder,
     PoseLandmarkType.rightShoulder,
-    PoseLandmarkType.leftHip,
-    PoseLandmarkType.rightHip,
-    PoseLandmarkType.leftKnee,
-    PoseLandmarkType.rightKnee,
-    PoseLandmarkType.leftAnkle,
-    PoseLandmarkType.rightAnkle,
+    PoseLandmarkType.leftElbow,
+    PoseLandmarkType.rightElbow,
+    PoseLandmarkType.leftWrist,
+    PoseLandmarkType.rightWrist,
   };
 
   // ── 摄像头 / 检测 ────────────────────────────────────────
@@ -58,32 +54,27 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
   Size _imageSize = Size.zero;
   InputImageRotation _rotation = InputImageRotation.rotation270deg;
 
-  // ── 深蹲状态 ─────────────────────────────────────────────
-  SquatAngleModel _angles = const SquatAngleModel(
-    kneeAngle: null,
-    hipAngle: null,
-    ankleAngle: null,
+  // ── 弯举状态 ───────────────────────────────────────────
+  CurlAngleModel _angles = const CurlAngleModel(
+    elbowAngle: null,
+    shoulderAngle: null,
   );
-  SquatError _error = SquatError.good;
-  final SquatPhaseDetector _phaseDetector = SquatPhaseDetector();
+  CurlError _error = CurlError.good;
+  final CurlPhaseDetector _phaseDetector = CurlPhaseDetector();
   int _repCount = 0;
-  // 当前循环底部累计达标帧数；达到阈值才视为蹲够深
-  int _bottomGoodFrames = 0;
-  // 底部质量是否达标（_bottomGoodFrames >= _kBottomQualityMinFrames）
-  bool _bottomQualityMet = false;
-  // 底部质量最低帧数：防止 ML Kit 单帧抖动误触发
-  static const int _kBottomQualityMinFrames = 3;
-  // 下蹲阶段保持不合格深度的帧计数
-  int _descendingBadFrames = 0;
-  // 下蹲阶段触发视觉反馈（红色线条）所需最低帧数（≈100ms @ 30fps）
-  static const int _kDescendingBadMinFrames = 3;
-  // 下蹲阶段触发语音纠错所需最低帧数（≈500ms @ 30fps）
-  // 快速下蹲可在 0.3-0.5s 内通过不合格区间，不应触发语音
-  static const int _kDescendingBadVoiceMinFrames = 15;
+  // 顶峰阶段累计达标帧数
+  int _peakGoodFrames = 0;
+  // 顶峰质量是否达标
+  bool _peakQualityMet = false;
+  static const int _kPeakQualityMinFrames = 3;
+  // curling 阶段 bodySwing 坏帧累计
+  int _curlingBadFrames = 0;
+  static const int _kCurlingBadMinFrames = 3;
+  static const int _kCurlingBadVoiceMinFrames = 15;
 
   // ── TTS ──────────────────────────────────────────────────
   final FlutterTts _tts = FlutterTts();
-  SquatError _lastSpokenError = SquatError.good;
+  CurlError _lastSpokenError = CurlError.good;
   int _lastSpokenRep = 0;
 
   @override
@@ -160,56 +151,50 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
       final poses = await _detectorService.processImage(inputImage);
       if (!mounted) return;
 
-      // 过滤误检测：肩→踝纵向跨度不足帧高 kPoseMinSpanRatio 时视为衣物/家具误识别
-      final detectedPose = poses.isNotEmpty &&
-              _isPoseRealistic(poses.first)
+      final detectedPose = poses.isNotEmpty && _isPoseRealistic(poses.first)
           ? poses.first
           : null;
 
       final angles =
           detectedPose != null ? _computeAngles(detectedPose) : _angles;
-      final newError = SquatFormChecker.check(angles);
+      final newError = CurlFormChecker.check(angles);
 
       int newRepCount = _repCount;
-      SquatPhase currentPhase = _phaseDetector.phase;
-      // 仅在三个角度全部可信（肩/髋/膝/踝/脚趾均置信度 > 0.5）时才更新状态机，
-      // 防止 ML Kit 推算不可见的下半身关键点导致误计次。
+      CurlPhase currentPhase = _phaseDetector.phase;
+
       if (angles.isFullyValid) {
         final prevPhase = _phaseDetector.phase;
-        final (phase, cycleCompleted) = _phaseDetector.update(angles.kneeAngle!);
+        final (phase, cycleCompleted) = _phaseDetector.update(angles.elbowAngle!);
         currentPhase = phase;
 
-        // 从站立开始新一轮时重置底部质量标志
-        if (prevPhase == SquatPhase.standing &&
-            phase == SquatPhase.descending) {
-          _bottomQualityMet = false;
-          _bottomGoodFrames = 0;
+        // 从伸展开始新一轮时重置顶峰质量标志
+        if (prevPhase == CurlPhase.extended && phase == CurlPhase.curling) {
+          _peakQualityMet = false;
+          _peakGoodFrames = 0;
         }
 
-        // 下蹲阶段：累计不合格深度帧数（超阈值才启用"继续蹲低"反馈）
-        if (phase == SquatPhase.descending &&
-            newError == SquatError.notDeepEnough) {
-          if (_descendingBadFrames < _kDescendingBadMinFrames) {
-            _descendingBadFrames++;
+        // curling 阶段：累计 bodySwing 坏帧
+        if (phase == CurlPhase.curling && newError == CurlError.bodySwing) {
+          if (_curlingBadFrames < _kCurlingBadVoiceMinFrames) {
+            _curlingBadFrames++;
           }
         } else {
-          _descendingBadFrames = 0;
+          _curlingBadFrames = 0;
         }
 
-        // 底部阶段：累计达标帧数，达到阈值才认为蹲够深
-        // 用原始 error 判断，防止单帧 ML Kit 抖动误触发
-        if (phase == SquatPhase.bottom && newError == SquatError.good) {
-          _bottomGoodFrames++;
-          if (_bottomGoodFrames >= _kBottomQualityMinFrames) {
-            _bottomQualityMet = true;
+        // 顶峰阶段：累计达标帧数
+        if (phase == CurlPhase.peak && newError == CurlError.good) {
+          _peakGoodFrames++;
+          if (_peakGoodFrames >= _kPeakQualityMinFrames) {
+            _peakQualityMet = true;
           }
         }
 
-        // 循环完成：仅当底部质量达标才计为有效深蹲
+        // 循环完成：仅当顶峰质量达标才计为有效弯举
         if (cycleCompleted) {
-          if (_bottomQualityMet) newRepCount = _repCount + 1;
-          _bottomQualityMet = false;
-          _bottomGoodFrames = 0;
+          if (_peakQualityMet) newRepCount = _repCount + 1;
+          _peakQualityMet = false;
+          _peakGoodFrames = 0;
         }
       }
 
@@ -229,9 +214,6 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
     }
   }
 
-  /// 判断检测到的姿态是否可能是真实人体（过滤衣物、家具等误识别）。
-  ///
-  /// 要求左/右肩与左/右踝的纵向跨度 ≥ 帧高 × [PoseThresholds.kPoseMinSpanRatio]。
   bool _isPoseRealistic(Pose pose) {
     double? minY, maxY;
     for (final t in [
@@ -249,51 +231,30 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
     return (maxY - minY) >= _imageSize.height * PoseThresholds.kPoseMinSpanRatio;
   }
 
-  /// 根据当前阶段过滤原始错误，返回应展示给用户的有效错误。
-  ///
-  /// - 站立阶段静默（膝角 >150° 时 notDeepEnough 属正常值，不提示）。
-  /// - notDeepEnough 仅在 ascending 且底部质量未达标时提示（即蹲而不够深再起身）。
-  /// - 其余错误（backTooForward）在任何非站立阶段均正常显示。
-  SquatError _effectiveError(SquatError raw, SquatPhase phase) {
-    if (phase == SquatPhase.standing) return SquatError.good;
-    if (raw == SquatError.notDeepEnough) {
-      // 下蹲中：保持不合格深度超过阈值帧数才提示（避免快速路过时误报）
-      if (phase == SquatPhase.descending) {
-        return _descendingBadFrames >= _kDescendingBadMinFrames
-            ? SquatError.notDeepEnough
-            : SquatError.good;
-      }
-      // 起身中：底部质量未达标才提示
-      return (phase == SquatPhase.ascending && !_bottomQualityMet)
-          ? SquatError.notDeepEnough
-          : SquatError.good;
+  /// 视觉错误过滤。
+  /// extended 阶段静默；bodySwing 需超过帧阈值。
+  CurlError _effectiveError(CurlError raw, CurlPhase phase) {
+    if (phase == CurlPhase.extended) return CurlError.good;
+    if (raw == CurlError.bodySwing) {
+      return _curlingBadFrames >= _kCurlingBadMinFrames
+          ? CurlError.bodySwing
+          : CurlError.good;
     }
     return raw;
   }
 
-  /// 语音专用错误过滤：与视觉相同逻辑，但下蹲阶段使用更长的帧阈值（0.5s）。
-  /// 快速下蹲通过不合格区间时红线会闪现（视觉灵敏），但不触发语音。
-  SquatError _effectiveVoiceError(SquatError raw, SquatPhase phase) {
-    if (phase == SquatPhase.standing) return SquatError.good;
-    if (raw == SquatError.notDeepEnough) {
-      if (phase == SquatPhase.descending) {
-        return _descendingBadFrames >= _kDescendingBadVoiceMinFrames
-            ? SquatError.notDeepEnough
-            : SquatError.good;
-      }
-      return (phase == SquatPhase.ascending && !_bottomQualityMet)
-          ? SquatError.notDeepEnough
-          : SquatError.good;
+  /// 语音错误过滤：bodySwing 使用更长帧阈值。
+  CurlError _effectiveVoiceError(CurlError raw, CurlPhase phase) {
+    if (phase == CurlPhase.extended) return CurlError.good;
+    if (raw == CurlError.bodySwing) {
+      return _curlingBadFrames >= _kCurlingBadVoiceMinFrames
+          ? CurlError.bodySwing
+          : CurlError.good;
     }
     return raw;
   }
 
-  /// 语音触发规则：
-  /// - 计次优先：完成一次播报"第N次"，打断正在播放的纠错语音
-  /// - 动作从错误变为达标时，立即停止纠错语音（快速下蹲场景）
-  /// - 站立阶段静默同步，不播报任何错误（避免站立膝角 >110° 误触发）
-  /// - 蹲起过程（非站立）中播报实际错误，"动作标准"改为纯视觉反馈
-  void _triggerTts(SquatError newError, int newRepCount, SquatPhase phase) {
+  void _triggerTts(CurlError newError, int newRepCount, CurlPhase phase) {
     if (newRepCount > _lastSpokenRep) {
       _lastSpokenRep = newRepCount;
       _lastSpokenError = newError;
@@ -301,21 +262,19 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
       return;
     }
 
-    // 站立阶段静默同步，不播报
-    if (phase == SquatPhase.standing) {
+    if (phase == CurlPhase.extended) {
       _lastSpokenError = newError;
       return;
     }
 
     // 纠错语音正在播放但动作已达标：立即打断
-    if (newError == SquatError.good && _lastSpokenError != SquatError.good) {
+    if (newError == CurlError.good && _lastSpokenError != CurlError.good) {
       unawaited(_tts.stop());
       _lastSpokenError = newError;
       return;
     }
 
-    // 蹲起过程中，仅播报错误（good 不播）
-    if (newError != SquatError.good && newError != _lastSpokenError) {
+    if (newError != CurlError.good && newError != _lastSpokenError) {
       _lastSpokenError = newError;
       unawaited(_tts.speak(_textForError(newError)));
     } else {
@@ -323,35 +282,26 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
     }
   }
 
-  String _textForError(SquatError error) => switch (error) {
-        SquatError.good => AppCopy.feedbackGood,
-        SquatError.notDeepEnough => AppCopy.feedbackNotDeepEnough,
-        SquatError.kneeOverToe => AppCopy.feedbackKneeOverToe,
-        SquatError.backTooForward => AppCopy.feedbackBackTooForward,
+  String _textForError(CurlError error) => switch (error) {
+        CurlError.good => AppCopy.feedbackCurlGood,
+        CurlError.bodySwing => AppCopy.feedbackBodySwing,
+        CurlError.incompleteExtension => AppCopy.feedbackIncompleteExtension,
+        CurlError.incompleteCurl => AppCopy.feedbackIncompleteCurl,
       };
 
-  /// 根据错误类型返回需要高亮（红色）的关节集合。
-  Set<PoseLandmarkType> _highlightedJoints(SquatError error) =>
+  Set<PoseLandmarkType> _highlightedJoints(CurlError error) =>
       switch (error) {
-        SquatError.notDeepEnough => {
-            PoseLandmarkType.leftHip,
-            PoseLandmarkType.leftKnee,
-            PoseLandmarkType.leftAnkle,
-            PoseLandmarkType.rightHip,
-            PoseLandmarkType.rightKnee,
-            PoseLandmarkType.rightAnkle,
-          },
-        SquatError.backTooForward => {
+        CurlError.bodySwing => {
             PoseLandmarkType.leftShoulder,
             PoseLandmarkType.rightShoulder,
-            PoseLandmarkType.leftHip,
-            PoseLandmarkType.rightHip,
+            PoseLandmarkType.leftElbow,
+            PoseLandmarkType.rightElbow,
           },
         _ => const {},
       };
 
-  /// 从单帧姿态计算左侧三关节角度。
-  SquatAngleModel _computeAngles(Pose pose) {
+  /// 从单帧姿态计算左臂肘角和肩角。
+  CurlAngleModel _computeAngles(Pose pose) {
     PoseLandmark? lm(PoseLandmarkType t) {
       final l = pose.landmarks[t];
       return (l != null && l.likelihood >= PoseThresholds.kLandmarkConfidence)
@@ -359,21 +309,17 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
           : null;
     }
 
-    final shoulder = lm(PoseLandmarkType.leftShoulder);
     final hip = lm(PoseLandmarkType.leftHip);
-    final knee = lm(PoseLandmarkType.leftKnee);
-    final ankle = lm(PoseLandmarkType.leftAnkle);
-    final foot = lm(PoseLandmarkType.leftFootIndex);
+    final shoulder = lm(PoseLandmarkType.leftShoulder);
+    final elbow = lm(PoseLandmarkType.leftElbow);
+    final wrist = lm(PoseLandmarkType.leftWrist);
 
-    return SquatAngleModel(
-      kneeAngle: (hip != null && knee != null && ankle != null)
-          ? AngleCalculator.calculate(hip, knee, ankle)
+    return CurlAngleModel(
+      elbowAngle: (shoulder != null && elbow != null && wrist != null)
+          ? AngleCalculator.calculate(shoulder, elbow, wrist)
           : null,
-      hipAngle: (shoulder != null && hip != null && knee != null)
-          ? AngleCalculator.calculate(shoulder, hip, knee)
-          : null,
-      ankleAngle: (knee != null && ankle != null && foot != null)
-          ? AngleCalculator.calculate(knee, ankle, foot)
+      shoulderAngle: (hip != null && shoulder != null && elbow != null)
+          ? AngleCalculator.calculate(hip, shoulder, elbow)
           : null,
     );
   }
@@ -402,8 +348,6 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
     final screen = MediaQuery.of(context).size;
     final portrait = _portraitPreviewSize;
 
-    // 横屏（Mac / iPad landscape）：contain 完整显示竖向画面，两侧留黑边
-    // 竖屏（iPhone）：cover 填满屏幕（与之前行为一致）
     final bool isLandscape = screen.width > screen.height;
     final double scale = isLandscape
         ? math.min(screen.width / portrait.width, screen.height / portrait.height)
@@ -411,7 +355,6 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
 
     final double scaledW = portrait.width * scale;
     final double scaledH = portrait.height * scale;
-    // 横屏时 offsetX 为负值（黑边宽度），_toScreen 中减去负值即正确加上偏移
     final double offsetX = (scaledW - screen.width) / 2;
     final double offsetY = (scaledH - screen.height) / 2;
 
@@ -434,14 +377,14 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
             ),
           ),
 
-          // ② 极浅全屏蒙版（提升骨骼与气泡可读性，不遮挡姿态）
+          // ② 蒙版
           Positioned.fill(
             child: ColoredBox(
               color: Colors.black.withValues(alpha: 0.10),
             ),
           ),
 
-          // ③ 骨骼叠加 + 角度文字 + 错误关节红色高亮
+          // ③ 骨骼叠加
           if (_imageSize != Size.zero)
             Positioned.fill(
               child: CustomPaint(
@@ -453,26 +396,25 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
                   coverScale: scale,
                   coverOffsetX: offsetX,
                   coverOffsetY: offsetY,
-                  monitoredConnections: _kSquatMonitoredConnections,
-                  monitoredLandmarks: _kSquatMonitoredLandmarks,
+                  monitoredConnections: _kCurlMonitoredConnections,
+                  monitoredLandmarks: _kCurlMonitoredLandmarks,
                   angleLabels: [
-                    (PoseLandmarkType.leftKnee, _angles.kneeAngle),
-                    (PoseLandmarkType.leftHip, _angles.hipAngle),
-                    (PoseLandmarkType.leftAnkle, _angles.ankleAngle),
+                    (PoseLandmarkType.leftElbow, _angles.elbowAngle),
+                    (PoseLandmarkType.leftShoulder, _angles.shoulderAngle),
                   ],
                   highlightedJoints: _highlightedJoints(_error),
-                  isGood: _error == SquatError.good && _phaseDetector.phase != SquatPhase.standing,
+                  isGood: _error == CurlError.good && _phaseDetector.phase != CurlPhase.extended,
                 ),
               ),
             ),
 
-          // ④ 反馈气泡（右侧，垂直居中，避开顶部按钮区）
+          // ④ 反馈气泡
           Positioned(
             right: 10,
             top: MediaQuery.of(context).padding.top + 60,
             bottom: MediaQuery.of(context).padding.bottom + 20,
             child: Center(
-              child: SquatFeedbackWidget(
+              child: CurlFeedbackWidget(
                 angles: _angles,
                 error: _error,
                 repCount: _repCount,
@@ -480,7 +422,7 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
             ),
           ),
 
-          // ⑤ 调试信息叠加层（编译开关 SHOW_DEBUG_OVERLAY 控制）
+          // ⑤ 调试信息
           if (kShowDebugOverlay)
             Positioned(
               top: MediaQuery.of(context).padding.top + 12,
@@ -502,7 +444,7 @@ class _SquatCoachPageState extends State<SquatCoachPage> {
               ),
             ),
 
-          // ⑥ 切换摄像头按钮（右上角）
+          // ⑥ 切换摄像头按钮
           Positioned(
             top: MediaQuery.of(context).padding.top + 12,
             right: 16,

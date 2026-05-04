@@ -2,7 +2,7 @@
 
 **周期**：2026-05-05 ~ 2026-05-11（7 天）
 **目标**：多动作架构 + 哑铃弯举 + 运动选择页
-**状态**：⏳ 待开始
+**状态**：✅ 已完成
 
 ## Sprint Goal
 
@@ -109,11 +109,11 @@ EXTENDED → rep_count++
 
 ### T1 · PosePainter 泛化 + 阈值文案扩展 `[P0]` `[3h]`
 
-- [ ] `PosePainter` 改为接收 `monitoredConnections`、`monitoredLandmarks`、`angleLabels` 参数
-- [ ] `SquatCoachPage` 传入深蹲配置，行为与 W1 完全一致
-- [ ] `pose_thresholds.dart` 新增弯举阈值（kCurlElbow*, kCurlShoulder*）
-- [ ] `copy.dart` 新增弯举反馈文案 + 运动选择页文案
-- [ ] 新增 `lib/core/models/exercise_type.dart`
+- [x] `PosePainter` 改为接收 `monitoredConnections`、`monitoredLandmarks`、`angleLabels` 参数
+- [x] `SquatCoachPage` 传入深蹲配置，行为与 W1 完全一致
+- [x] `pose_thresholds.dart` 新增弯举阈值（kCurlElbow*, kCurlShoulder*）
+- [x] `copy.dart` 新增弯举反馈文案 + 运动选择页文案
+- [x] 新增 `lib/core/models/exercise_type.dart`
 
 **验收**：现有 20 个测试全绿，`flutter analyze` 零警告，深蹲功能无 regression。
 
@@ -121,11 +121,11 @@ EXTENDED → rep_count++
 
 ### T2 · 弯举领域层：角度模型 + 错误判定 + 状态机 `[P0]` `[4h]`
 
-- [ ] 创建 `curl_angle_model.dart`（elbowAngle + shoulderAngle）
-- [ ] 创建 `curl_form_checker.dart`（bodySwing 帧级判定）
-- [ ] 创建 `curl_phase_detector.dart`（4 阶段状态机 + cycleCompleted）
-- [ ] `curl_form_checker_test.dart`：6 个用例
-- [ ] `curl_phase_detector_test.dart`：12 个用例
+- [x] 创建 `curl_angle_model.dart`（elbowAngle + shoulderAngle）
+- [x] 创建 `curl_form_checker.dart`（bodySwing 帧级判定）
+- [x] 创建 `curl_phase_detector.dart`（4 阶段状态机 + cycleCompleted）
+- [x] `curl_form_checker_test.dart`：7 个用例
+- [x] `curl_phase_detector_test.dart`：12 个用例
 
 **验收**：18 个新测试全绿，`flutter analyze` 零警告。
 
@@ -133,11 +133,11 @@ EXTENDED → rep_count++
 
 ### T3 · 弯举展示层：CurlCoachPage + CurlFeedbackWidget `[P0]` `[5h]`
 
-- [ ] 创建 `curl_coach_page.dart`（参考 squat_coach_page 结构）
-- [ ] `_computeAngles` 计算肘角（shoulder-elbow-wrist）和肩角（hip-shoulder-elbow）
-- [ ] 传入弯举 monitoredConnections（肩-肘、肘-腕）给 PosePainter
-- [ ] 创建 `curl_feedback_widget.dart`（肘角 + 肩角 + 计次 + 错误提示）
-- [ ] 复用防抖机制（peak quality 帧计数、语音延迟阈值）
+- [x] 创建 `curl_coach_page.dart`（参考 squat_coach_page 结构）
+- [x] `_computeAngles` 计算肘角（shoulder-elbow-wrist）和肩角（hip-shoulder-elbow）
+- [x] 传入弯举 monitoredConnections（肩-肘、肘-腕）给 PosePainter
+- [x] 创建 `curl_feedback_widget.dart`（肘角 + 肩角 + 计次 + 错误提示）
+- [x] 复用防抖机制（peak quality 帧计数、语音延迟阈值）
 
 **验收**：Mac 上弯举时肘角实时变化，计次正确，语音提示正常。
 
@@ -145,10 +145,10 @@ EXTENDED → rep_count++
 
 ### T4 · 运动选择页 + 路由 `[P1]` `[2h]`
 
-- [ ] 创建 `exercise_selection_page.dart`
-- [ ] 修改 `app.dart`：home 改为 `ExerciseSelectionPage`
-- [ ] 两个 coach page 加返回按钮
-- [ ] 返回选择页时释放摄像头资源
+- [x] 创建 `exercise_selection_page.dart`
+- [x] 修改 `app.dart`：home 改为 `ExerciseSelectionPage`
+- [x] 两个 coach page 加返回按钮
+- [x] 返回选择页时释放摄像头资源
 
 **验收**：启动 app 看到选择页，可进入深蹲或弯举，可返回。
 
@@ -156,10 +156,10 @@ EXTENDED → rep_count++
 
 ### T5 · 集成测试 + 回归验证 `[P1]` `[2h]`
 
-- [ ] 全部测试通过（预计 38+）
-- [ ] Mac 上深蹲和弯举各做 5 个，验证计次和语音
-- [ ] 微调弯举阈值（如需要）
-- [ ] `flutter analyze` 零警告
+- [x] 全部测试通过（39 个）
+- [x] Mac 上深蹲和弯举各做 5 个，验证计次和语音
+- [x] 微调弯举阈值（如需要）
+- [x] `flutter analyze` 零警告
 
 **验收**：38+ 测试全绿，两个运动在 Mac 上演示通过。
 
@@ -167,9 +167,9 @@ EXTENDED → rep_count++
 
 ### T6 · 文档更新 `[P2]` `[1h]`
 
-- [ ] 更新 `architecture.md`：弯举力学模型、新增目录结构
-- [ ] 更新 `current-status.md`
-- [ ] 更新 `roadmap.md`：W2 标记完成，确认 W3
+- [x] 更新 `current-status.md`
+- [x] 更新 `roadmap.md`：W2 标记完成，确认 W3
+- [ ] 更新 `architecture.md`：弯举力学模型、新增目录结构（移至 W3）
 
 ---
 
@@ -224,9 +224,9 @@ lib/app.dart                               — 入口改为选择页
 
 ## Sprint Review 检查清单
 
-- [ ] Sprint Goal 用 Mac 演示通过（选择页 → 弯举 → 5 次计次）
-- [ ] `flutter test` 全部通过（38+）
-- [ ] `flutter analyze` 零警告
-- [ ] `docs/state/current-status.md` 已更新
-- [ ] `docs/roadmap.md` W2 标记完成
-- [ ] 代码推送 GitHub
+- [x] Sprint Goal 用 Mac 演示通过（选择页 → 弯举 → 5 次计次）
+- [x] `flutter test` 全部通过（39 个）
+- [x] `flutter analyze` 零警告
+- [x] `docs/state/current-status.md` 已更新
+- [x] `docs/roadmap.md` W2 标记完成
+- [x] 代码推送 GitHub

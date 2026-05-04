@@ -15,9 +15,24 @@ abstract final class AppCopy {
   /// 计次播报文案，例如：第 3 次
   static String repAnnouncement(int n) => '第 $n 次';
 
+  // ── 弯举反馈（界面文字 + TTS 播报） ─────────────────────
+  static const String feedbackCurlGood = '动作标准！';
+  static const String feedbackBodySwing = '大臂保持固定，不要借力晃动';
+  static const String feedbackIncompleteExtension = '手臂完全伸直再弯曲';
+  static const String feedbackIncompleteCurl = '再弯高一点，充分收缩';
+
   // ── 反馈面板标签 ─────────────────────────────────────────
   static const String labelKnee = '膝';
   static const String labelHip = '髋';
   static const String labelAnkle = '踝';
+  static const String labelElbow = '肘';
+  static const String labelShoulder = '肩';
   static const String labelReps = '计次';
+
+  // ── 运动选择页 ─────────────────────────────────────────
+  static const String selectExerciseTitle = '选择训练动作';
+  static const String exerciseSquat = '深蹲';
+  static const String exerciseSquatDesc = '膝关节 · 髋关节 · 踝关节';
+  static const String exerciseBicepCurl = '哑铃弯举';
+  static const String exerciseBicepCurlDesc = '肘关节';
 }

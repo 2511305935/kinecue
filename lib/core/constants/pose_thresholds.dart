@@ -23,6 +23,18 @@ abstract final class PoseThresholds {
   /// 踝背屈上限
   static const double kAnkleMax = 100.0;
 
+  // ── 弯举 · 肘关节（肩 - 肘 - 腕） ──────────────────────
+  /// 手臂伸直判定（> 此值 = 完全伸展）
+  static const double kCurlElbowExtended = 160.0;
+  /// 弯举顶峰判定（< 此值 = 到达顶峰）
+  static const double kCurlElbowPeak = 40.0;
+
+  // ── 弯举 · 肩关节（髋 - 肩 - 肘） ──────────────────────
+  /// 大臂前倾下限（低于此值 = 身体晃动/借力）
+  static const double kCurlShoulderMin = 5.0;
+  /// 大臂后摆上限（高于此值 = 身体晃动/借力）
+  static const double kCurlShoulderMax = 35.0;
+
   // ── 置信度 ───────────────────────────────────────────────
   /// 关键点置信度阈值，低于此值不参与角度计算
   static const double kLandmarkConfidence = 0.5;
