@@ -35,4 +35,28 @@ abstract final class AppCopy {
   static const String exerciseSquatDesc = '膝关节 · 髋关节 · 踝关节';
   static const String exerciseBicepCurl = '哑铃弯举';
   static const String exerciseBicepCurlDesc = '肘关节';
+
+  // ── 训练配置 ───────────────────────────────────────────
+  static const String configReps = '每组次数';
+  static const String configSets = '组数';
+  static const String configRest = '休息(秒)';
+  static const String startTraining = '开始训练';
+
+  // ── 休息界面 ─────────────────────────────────────────
+  static String setComplete(int n) => '第 $n 组完成！';
+  static String setProgress(int done, int target) => '$done / $target 次';
+  static const String restTime = '休息时间';
+  static const String aiCoachTitle = 'AI 教练建议';
+  static const String aiCoachLoading = '正在生成建议...';
+  static const String aiCoachFallback = '休息一下，保持呼吸均匀。准备好了就开始下一组！';
+  static const String nextSet = '开始下一组';
+  static const String endWorkout = '结束训练';
+  static const String workoutComplete = '训练完成！';
+  static String workoutSummary(int sets, int totalReps) =>
+      '共完成 $sets 组，$totalReps 次';
+
+  // ── 摄像头权限 ─────────────────────────────────────────
+  static const String cameraPermissionDenied =
+      '无法访问摄像头\n请在系统设置中允许 KineCue 使用摄像头';
+  static const String goBack = '返回';
 }
