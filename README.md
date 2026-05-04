@@ -27,7 +27,7 @@
 
 - Flutter 3.x（`flutter --version` 确认）
 - Xcode 15+（iOS 真机调试必须）
-- iPhone：iOS 15.5+，开启开发者模式
+- iPhone：iOS 13.0+，开启开发者模式
 
 **运行**
 

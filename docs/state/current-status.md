@@ -61,7 +61,7 @@
 ```
 Flutter:  3.x（以 flutter --version 实际输出为准）
 Dart:     3.11.4+
-目标平台:  iOS 15.5+（先行）
+目标平台:  iOS 13.0+（先行）
 测试设备:  iPhone X，前置摄像头 sensorOrientation = 270
            img: 480×640，rot: rotation270
            portrait: 480×640，scale: 1.27
