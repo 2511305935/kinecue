@@ -55,6 +55,20 @@ abstract final class AppCopy {
   static String workoutSummary(int sets, int totalReps) =>
       '共完成 $sets 组，$totalReps 次';
 
+  // ── 训练记录 ───────────────────────────────────────────
+  static const String historyTitle = '训练记录';
+  static const String historyEmpty = '暂无训练记录';
+  static String historyItemSummary(int sets, int reps, int seconds) {
+    final min = seconds ~/ 60;
+    final sec = seconds % 60;
+    return '$sets组 · $reps次 · $min分$sec秒';
+  }
+
+  static const Map<String, String> exerciseNames = {
+    'squat': '深蹲',
+    'bicepCurl': '哑铃弯举',
+  };
+
   // ── 摄像头权限 ─────────────────────────────────────────
   static const String cameraPermissionDenied =
       '无法访问摄像头\n请在系统设置中允许 KineCue 使用摄像头';

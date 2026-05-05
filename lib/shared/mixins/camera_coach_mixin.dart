@@ -9,10 +9,13 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:kinecue/core/constants/copy.dart';
 import 'package:kinecue/core/constants/debug_flags.dart';
 import 'package:kinecue/core/constants/pose_thresholds.dart';
+import 'package:kinecue/core/models/exercise_type.dart';
 import 'package:kinecue/core/models/session_state.dart';
 import 'package:kinecue/core/models/set_summary.dart';
 import 'package:kinecue/core/models/workout_config.dart';
+import 'package:kinecue/core/models/workout_session.dart';
 import 'package:kinecue/core/services/coaching_api_service.dart';
+import 'package:kinecue/core/services/workout_db_service.dart';
 import 'package:kinecue/core/utils/logger.dart';
 import 'package:kinecue/features/pose_detection/data/pose_detector_service.dart';
 import 'package:kinecue/shared/widgets/rest_screen_overlay.dart';
@@ -27,6 +30,7 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
 
   List<CameraDescription> get cameras;
   WorkoutConfig get workoutConfig;
+  ExerciseType get exerciseType;
   void onPoseDetected(Pose? pose);
 
   List<Widget> buildExerciseOverlays(
@@ -65,6 +69,8 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
   int currentSet = 1;
   int _totalRepsAccumulated = 0;
   DateTime? setStartTime;
+  DateTime? _sessionStartTime;
+  final List<SetSummary> _completedSets = [];
 
   // ── Rest timer ─────────────────────────────────────────────
 
@@ -81,7 +87,9 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
   // ── Lifecycle helpers ──────────────────────────────────────
 
   void initCoach() {
+    _sessionStartTime = DateTime.now();
     setStartTime = DateTime.now();
+    _completedSets.clear();
     initCamera();
     initTts();
   }
@@ -221,6 +229,7 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
 
     // Build set summary before resetting
     final summary = buildSetSummary(currentSet);
+    _completedSets.add(summary);
 
     // Last set → go to completed directly (with coaching text)
     final isLastSet = currentSet >= workoutConfig.totalSets;
@@ -277,7 +286,21 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
   }
 
   void _endWorkout() {
+    _persistWorkout();
     Navigator.pop(context);
+  }
+
+  void _persistWorkout() {
+    if (_completedSets.isEmpty) return;
+    final session = WorkoutSession.fromSets(
+      exerciseType: exerciseType,
+      startedAt: _sessionStartTime ?? DateTime.now(),
+      sets: List.of(_completedSets),
+    );
+    WorkoutDbService.instance.insertSession(session).catchError((e) {
+      Log.e('Failed to save workout: $e', tag: 'DB');
+      return -1;
+    });
   }
 
   // ── Layout helpers ─────────────────────────────────────────
@@ -403,19 +426,34 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
               ),
             ),
 
-          // ⑥ Camera switch button
+          // ⑥ Camera switch + exit buttons
           if (sessionPhase == SessionPhase.exercising)
             Positioned(
               top: MediaQuery.of(context).padding.top + 12,
               right: 16,
-              child: IconButton(
-                onPressed: isSwitching ? null : switchCamera,
-                icon: const Icon(Icons.cameraswitch_rounded),
-                color: Colors.white,
-                iconSize: 28,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.black45,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: _endWorkout,
+                    icon: const Icon(Icons.close_rounded),
+                    color: Colors.white,
+                    iconSize: 28,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black45,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: isSwitching ? null : switchCamera,
+                    icon: const Icon(Icons.cameraswitch_rounded),
+                    color: Colors.white,
+                    iconSize: 28,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black45,
+                    ),
+                  ),
+                ],
               ),
             ),
 

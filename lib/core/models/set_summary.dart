@@ -35,7 +35,19 @@ class SetSummary {
   /// 关键相位的平均角度（深蹲取底部膝角，弯举取顶峰肘角）。
   final double? avgKeyAngle;
 
-  /// 转为 JSON，用于 API 请求 body。
+  /// 从 JSON 反序列化（数据库读取）。
+  factory SetSummary.fromJson(Map<String, dynamic> json) => SetSummary(
+        exerciseName: json['exercise'] as String,
+        setNumber: json['set_number'] as int,
+        totalSets: json['total_sets'] as int,
+        repsCompleted: json['reps_completed'] as int,
+        targetReps: json['target_reps'] as int,
+        durationSeconds: json['set_duration_seconds'] as int,
+        errorCounts: Map<String, int>.from(json['errors'] as Map),
+        avgKeyAngle: json['avg_key_angle'] as double?,
+      );
+
+  /// 转为 JSON，用于 API 请求 body 和数据库存储。
   Map<String, dynamic> toJson() => {
         'exercise': exerciseName,
         'set_number': setNumber,

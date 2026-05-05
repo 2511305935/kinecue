@@ -6,6 +6,7 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 import 'package:kinecue/core/constants/copy.dart';
 import 'package:kinecue/core/constants/pose_thresholds.dart';
+import 'package:kinecue/core/models/exercise_type.dart';
 import 'package:kinecue/core/models/set_summary.dart';
 import 'package:kinecue/core/models/workout_config.dart';
 import 'package:kinecue/core/utils/angle_calculator.dart';
@@ -80,6 +81,9 @@ class _SquatCoachPageState extends State<SquatCoachPage>
 
   @override
   WorkoutConfig get workoutConfig => widget.config;
+
+  @override
+  ExerciseType get exerciseType => ExerciseType.squat;
 
   // ── Lifecycle ─────────────────────────────────────────────
 
