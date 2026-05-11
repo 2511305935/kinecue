@@ -16,6 +16,7 @@ import 'package:kinecue/core/models/workout_config.dart';
 import 'package:kinecue/core/models/workout_session.dart';
 import 'package:kinecue/core/services/coaching_api_service.dart';
 import 'package:kinecue/core/services/workout_db_service.dart';
+import 'package:kinecue/core/theme/app_theme.dart';
 import 'package:kinecue/core/utils/logger.dart';
 import 'package:kinecue/features/pose_detection/data/pose_detector_service.dart';
 import 'package:kinecue/shared/widgets/rest_screen_overlay.dart';
@@ -318,20 +319,19 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
     // Camera error
     if (cameraError != null) {
       return Scaffold(
-        backgroundColor: Colors.black,
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.videocam_off,
-                    color: Colors.white54, size: 64),
+                Icon(Icons.videocam_off,
+                    color: AppColors.onSurfaceLow, size: 64),
                 const SizedBox(height: 16),
                 Text(
                   cameraError!,
-                  style:
-                      const TextStyle(color: Colors.white70, fontSize: 16),
+                  style: TextStyle(
+                      color: AppColors.onSurfaceHigh, fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -369,7 +369,6 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
     final double offsetY = (scaledH - screen.height) / 2;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // ① Camera preview
@@ -390,7 +389,7 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
           // ② Overlay mask
           Positioned.fill(
             child: ColoredBox(
-              color: Colors.black.withValues(alpha: 0.10),
+              color: AppColors.surface.withValues(alpha: 0.10),
             ),
           ),
 
@@ -411,7 +410,7 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
               left: 12,
               child: Container(
                 padding: const EdgeInsets.all(6),
-                color: Colors.black54,
+                color: AppColors.overlayLight,
                 child: Text(
                   'img: ${imageSize.width.toInt()}×${imageSize.height.toInt()}'
                   '\nrot: $rotation'
@@ -419,7 +418,7 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
                   '\nscale: ${scale.toStringAsFixed(2)}'
                   '\noffX: ${offsetX.toInt()} offY: ${offsetY.toInt()}',
                   style: const TextStyle(
-                    color: Colors.greenAccent,
+                    color: AppColors.primary,
                     fontSize: 11,
                   ),
                 ),
@@ -437,20 +436,20 @@ mixin CameraCoachMixin<T extends StatefulWidget> on State<T> {
                   IconButton(
                     onPressed: _endWorkout,
                     icon: const Icon(Icons.close_rounded),
-                    color: Colors.white,
+                    color: AppColors.onSurface,
                     iconSize: 28,
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.black45,
+                      backgroundColor: AppColors.overlaySubtle,
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
                     onPressed: isSwitching ? null : switchCamera,
                     icon: const Icon(Icons.cameraswitch_rounded),
-                    color: Colors.white,
+                    color: AppColors.onSurface,
                     iconSize: 28,
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.black45,
+                      backgroundColor: AppColors.overlaySubtle,
                     ),
                   ),
                 ],

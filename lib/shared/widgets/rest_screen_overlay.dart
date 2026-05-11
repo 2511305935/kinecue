@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:kinecue/core/constants/copy.dart';
+import 'package:kinecue/core/theme/app_theme.dart';
 
 /// 组间休息覆盖层：倒计时 + AI 教练建议 + 操作按钮。
 class RestScreenOverlay extends StatelessWidget {
@@ -36,11 +37,11 @@ class RestScreenOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withValues(alpha: 0.85),
+      color: AppColors.overlay,
       child: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -48,7 +49,7 @@ class RestScreenOverlay extends StatelessWidget {
                 Text(
                   AppCopy.setComplete(setNumber),
                   style: const TextStyle(
-                    color: Colors.greenAccent,
+                    color: AppColors.primary,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
@@ -57,7 +58,7 @@ class RestScreenOverlay extends StatelessWidget {
                 Text(
                   AppCopy.setProgress(repsCompleted, targetReps),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: AppColors.onSurfaceMedium,
                     fontSize: 16,
                   ),
                 ),
@@ -68,26 +69,32 @@ class RestScreenOverlay extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(16),
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusLg),
                   ),
                   child: Column(
                     children: [
                       Text(
                         AppCopy.restTime,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: AppColors.onSurfaceLow,
                           fontSize: 14,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        _timerText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 48,
-                          fontWeight: FontWeight.w300,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) =>
+                            FadeTransition(opacity: animation, child: child),
+                        child: Text(
+                          _timerText,
+                          key: ValueKey(remainingSeconds),
+                          style: const TextStyle(
+                            color: AppColors.onSurface,
+                            fontSize: 48,
+                            fontWeight: FontWeight.w300,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                     ],
@@ -98,13 +105,11 @@ class RestScreenOverlay extends StatelessWidget {
                 // AI 教练建议
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                    border: Border.all(color: AppColors.divider),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +117,7 @@ class RestScreenOverlay extends StatelessWidget {
                       Text(
                         AppCopy.aiCoachTitle,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: AppColors.onSurfaceLow,
                           fontSize: 12,
                         ),
                       ),
@@ -121,7 +126,7 @@ class RestScreenOverlay extends StatelessWidget {
                         Text(
                           AppCopy.aiCoachLoading,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: AppColors.onSurfaceLow,
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
                           ),
@@ -130,7 +135,7 @@ class RestScreenOverlay extends StatelessWidget {
                         Text(
                           coachingText ?? AppCopy.aiCoachFallback,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.onSurface,
                             fontSize: 15,
                             height: 1.5,
                           ),
@@ -147,13 +152,6 @@ class RestScreenOverlay extends StatelessWidget {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: onNextSet,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.greenAccent,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                       child: Text(
                         AppCopy.nextSet,
                         style: const TextStyle(
@@ -169,17 +167,8 @@ class RestScreenOverlay extends StatelessWidget {
                   height: 48,
                   child: OutlinedButton(
                     onPressed: onEndWorkout,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
                     child: Text(
-                      isLastSet ? AppCopy.endWorkout : AppCopy.endWorkout,
+                      AppCopy.endWorkout,
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),
@@ -209,24 +198,33 @@ class WorkoutCompleteOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withValues(alpha: 0.9),
+      color: AppColors.overlayDark,
       child: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.emoji_events,
-                  color: Colors.amberAccent,
-                  size: 64,
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: child,
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events,
+                    color: AppColors.warning,
+                    size: 64,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
                   AppCopy.workoutComplete,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.onSurface,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
@@ -235,7 +233,7 @@ class WorkoutCompleteOverlay extends StatelessWidget {
                 Text(
                   AppCopy.workoutSummary(totalSets, totalReps),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: AppColors.onSurfaceMedium,
                     fontSize: 16,
                   ),
                 ),
@@ -245,13 +243,6 @@ class WorkoutCompleteOverlay extends StatelessWidget {
                   height: 48,
                   child: ElevatedButton(
                     onPressed: onFinish,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.greenAccent,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
                     child: const Text(
                       AppCopy.goBack,
                       style: TextStyle(

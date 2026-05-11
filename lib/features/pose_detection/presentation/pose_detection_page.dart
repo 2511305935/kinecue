@@ -6,6 +6,7 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 import 'package:kinecue/core/constants/copy.dart';
 import 'package:kinecue/core/constants/pose_thresholds.dart';
+import 'package:kinecue/core/theme/app_theme.dart';
 import 'package:kinecue/core/utils/angle_calculator.dart';
 import 'package:kinecue/features/pose_detection/data/pose_detector_service.dart';
 import 'package:kinecue/shared/widgets/pose_painter.dart';
@@ -152,7 +153,6 @@ class _PoseDetectionPageState extends State<PoseDetectionPage> {
     final double offsetY = (scaledH - screen.height) / 2;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // ① 预览：FittedBox.cover 保持比例填满屏幕，不变形
@@ -199,14 +199,14 @@ class _PoseDetectionPageState extends State<PoseDetectionPage> {
             left: 12,
             child: Container(
               padding: const EdgeInsets.all(6),
-              color: Colors.black54,
+              color: AppColors.overlayLight,
               child: Text(
                 'img: ${_imageSize.width.toInt()}×${_imageSize.height.toInt()}'
                 '\nrot: $_rotation'
                 '\nportrait: ${portrait.width.toInt()}×${portrait.height.toInt()}'
                 '\nscale: ${scale.toStringAsFixed(2)}'
                 '\noffX: ${offsetX.toInt()} offY: ${offsetY.toInt()}',
-                style: const TextStyle(color: Colors.greenAccent, fontSize: 11),
+                style: const TextStyle(color: AppColors.primary, fontSize: 11),
               ),
             ),
           ),
@@ -220,12 +220,12 @@ class _PoseDetectionPageState extends State<PoseDetectionPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(20),
+                  color: AppColors.overlayLight,
+                  borderRadius: BorderRadius.circular(AppSpacing.bubbleRadius),
                 ),
                 child: Text(
                   _poses.isEmpty ? AppCopy.standInFront : AppCopy.poseDetected,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.onSurface),
                 ),
               ),
             ),

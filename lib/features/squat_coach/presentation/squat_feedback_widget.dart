@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:kinecue/core/constants/copy.dart';
 import 'package:kinecue/core/constants/pose_thresholds.dart';
+import 'package:kinecue/core/theme/app_theme.dart';
 import 'package:kinecue/features/squat_coach/domain/squat_angle_model.dart';
 import 'package:kinecue/features/squat_coach/domain/squat_form_checker.dart';
 
@@ -85,8 +86,8 @@ class _Bubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: alpha),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.surface.withValues(alpha: alpha),
+        borderRadius: BorderRadius.circular(AppSpacing.bubbleRadius),
       ),
       child: child,
     );
@@ -112,17 +113,17 @@ class _AngleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final inRange = angle != null && angle! >= min && angle! <= max;
     final color = angle == null
-        ? Colors.white38
+        ? AppColors.onSurfaceLow
         : inRange
-            ? Colors.greenAccent
-            : Colors.amberAccent;
+            ? AppColors.primary
+            : AppColors.warning;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white60, fontSize: 12),
+          style: TextStyle(color: AppColors.onSurfaceMedium, fontSize: 12),
         ),
         const SizedBox(width: 4),
         Text(
@@ -148,13 +149,13 @@ class _ErrorLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (text, color) = switch (error) {
-      SquatError.good => (AppCopy.feedbackGood, Colors.greenAccent),
+      SquatError.good => (AppCopy.feedbackGood, AppColors.primary),
       SquatError.notDeepEnough =>
-        (AppCopy.feedbackNotDeepEnough, Colors.amberAccent),
+        (AppCopy.feedbackNotDeepEnough, AppColors.warning),
       SquatError.kneeOverToe =>
-        (AppCopy.feedbackKneeOverToe, Colors.orangeAccent),
+        (AppCopy.feedbackKneeOverToe, AppColors.caution),
       SquatError.backTooForward =>
-        (AppCopy.feedbackBackTooForward, Colors.redAccent),
+        (AppCopy.feedbackBackTooForward, AppColors.error),
     };
     return Text(
       text,
@@ -177,7 +178,7 @@ class _RepCounter extends StatelessWidget {
       children: [
         Text(
           '${AppCopy.labelReps} ',
-          style: const TextStyle(color: Colors.white60, fontSize: 12),
+          style: TextStyle(color: AppColors.onSurfaceMedium, fontSize: 12),
         ),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
@@ -191,7 +192,7 @@ class _RepCounter extends StatelessWidget {
             '$repCount',
             key: ValueKey(repCount),
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.onSurface,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),

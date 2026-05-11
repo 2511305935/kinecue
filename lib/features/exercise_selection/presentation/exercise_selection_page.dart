@@ -1,11 +1,15 @@
 import 'package:camera/camera.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:kinecue/core/constants/copy.dart';
 import 'package:kinecue/core/models/workout_config.dart';
 import 'package:kinecue/core/models/workout_session.dart';
 import 'package:kinecue/core/services/workout_db_service.dart';
+import 'package:kinecue/core/theme/app_theme.dart';
+import 'package:kinecue/features/training_detail/presentation/training_detail_page.dart';
 import 'package:kinecue/features/squat_coach/presentation/squat_coach_page.dart';
 import 'package:kinecue/features/bicep_curl_coach/presentation/curl_coach_page.dart';
 
@@ -44,23 +48,25 @@ class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
   }
 
   Future<void> _startExercise(Widget page) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    await Navigator.push(
+      context,
+      CupertinoPageRoute(builder: (_) => page),
+    );
     _loadHistory();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
           children: [
             const SizedBox(height: 60),
             const Text(
               'KineCue',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
@@ -69,7 +75,7 @@ class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
             Text(
               AppCopy.selectExerciseTitle,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: AppColors.onSurfaceMedium,
                 fontSize: 16,
               ),
             ),
@@ -128,7 +134,7 @@ class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
             Text(
               AppCopy.historyTitle,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: AppColors.onSurfaceLow,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -136,20 +142,49 @@ class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
             const SizedBox(height: 12),
             if (_recentSessions.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
+                padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Center(
-                  child: Text(
-                    AppCopy.historyEmpty,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      fontSize: 14,
-                    ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.history,
+                        color: AppColors.onSurfaceDisabled,
+                        size: 36,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        AppCopy.historyEmpty,
+                        style: TextStyle(
+                          color: AppColors.onSurfaceDisabled,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        AppCopy.historyEmptyHint,
+                        style: TextStyle(
+                          color: AppColors.onSurfaceDisabled,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               )
             else
               for (final session in _recentSessions) ...[
-                _HistoryCard(session: session),
+                _HistoryCard(
+                  session: session,
+                  onTap: session.id != null
+                      ? () => Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                              builder: (_) =>
+                                  TrainingDetailPage(sessionId: session.id!),
+                            ),
+                          )
+                      : null,
+                ),
                 const SizedBox(height: 10),
               ],
             const SizedBox(height: 24),
@@ -172,8 +207,8 @@ class _ConfigRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
       child: Row(
         children: [
@@ -183,7 +218,7 @@ class _ConfigRow extends StatelessWidget {
                 width: 1,
                 height: 36,
                 margin: const EdgeInsets.symmetric(horizontal: 8),
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AppColors.divider,
               ),
             Expanded(child: configs[i]),
           ],
@@ -218,7 +253,7 @@ class _ConfigItem extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
+            color: AppColors.onSurfaceLow,
             fontSize: 11,
           ),
         ),
@@ -238,7 +273,7 @@ class _ConfigItem extends StatelessWidget {
                 '$value',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -270,20 +305,23 @@ class _StepButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: enabled ? onTap : null,
+      onTap: enabled
+          ? () {
+              HapticFeedback.lightImpact();
+              onTap();
+            }
+          : null,
       child: Container(
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: enabled ? 0.12 : 0.04),
+          color: enabled ? AppColors.buttonEnabled : AppColors.buttonDisabled,
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
           size: 16,
-          color: enabled
-              ? Colors.white.withValues(alpha: 0.7)
-              : Colors.white.withValues(alpha: 0.2),
+          color: enabled ? AppColors.buttonIconEnabled : AppColors.buttonIconDisabled,
         ),
       ),
     );
@@ -308,21 +346,24 @@ class _ExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      splashColor: AppColors.primary.withValues(alpha: 0.08),
+      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadiusLg),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusLg),
+          border: Border.all(color: AppColors.cardBorder),
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.white70, size: 36),
+            Icon(icon, color: AppColors.buttonIconEnabled, size: 36),
             const SizedBox(width: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,7 +371,7 @@ class _ExerciseCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.onSurface,
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                   ),
@@ -339,7 +380,7 @@ class _ExerciseCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: AppColors.onSurfaceLow,
                     fontSize: 13,
                   ),
                 ),
@@ -348,7 +389,7 @@ class _ExerciseCard extends StatelessWidget {
             const Spacer(),
             Icon(
               Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: AppColors.onSurfaceDisabled,
             ),
           ],
         ),
@@ -360,9 +401,10 @@ class _ExerciseCard extends StatelessWidget {
 // ── 训练记录卡片 ─────────────────────────────────────────────
 
 class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.session});
+  const _HistoryCard({required this.session, this.onTap});
 
   final WorkoutSession session;
+  final VoidCallback? onTap;
 
   IconData get _icon => switch (session.exerciseType.name) {
         'squat' => Icons.fitness_center,
@@ -381,44 +423,53 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(_icon, color: Colors.white38, size: 28),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$_exerciseName · $_dateText',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.cardSubtle,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        ),
+        child: Row(
+          children: [
+            Icon(_icon, color: AppColors.onSurfaceLow, size: 28),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$_exerciseName · $_dateText',
+                    style: const TextStyle(
+                      color: AppColors.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  AppCopy.historyItemSummary(
-                    session.totalSets,
-                    session.totalReps,
-                    session.totalDurationSeconds,
+                  const SizedBox(height: 2),
+                  Text(
+                    AppCopy.historyItemSummary(
+                      session.totalSets,
+                      session.totalReps,
+                      session.totalDurationSeconds,
+                    ),
+                    style: TextStyle(
+                      color: AppColors.onSurfaceLow,
+                      fontSize: 13,
+                    ),
                   ),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            Icon(
+              Icons.chevron_right,
+              color: AppColors.onSurfaceDisabled,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

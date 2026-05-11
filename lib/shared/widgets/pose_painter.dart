@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
+import 'package:kinecue/core/theme/app_theme.dart';
+
 /// 全部骨骼连线（14 条）。
 const allConnections = [
   [PoseLandmarkType.nose, PoseLandmarkType.leftEar],
@@ -63,27 +65,27 @@ class PosePainter extends CustomPainter {
 
   // ── 监控区画笔 ──────────────────────────────────────────
   Paint get _monitoredPaint => Paint()
-    ..color = isGood ? Colors.greenAccent : Colors.white
+    ..color = isGood ? AppColors.primary : AppColors.onSurface
     ..strokeWidth = 5
     ..style = PaintingStyle.stroke;
 
   final _errorLinePaint = Paint()
-    ..color = Colors.redAccent
+    ..color = AppColors.error
     ..strokeWidth = 5
     ..style = PaintingStyle.stroke;
 
   Paint get _monitoredDotPaint => Paint()
-    ..color = isGood ? Colors.greenAccent : Colors.white
+    ..color = isGood ? AppColors.primary : AppColors.onSurface
     ..style = PaintingStyle.fill;
 
   // ── 非监控区画笔 ────────────────────────────────────────
   final _secondaryPaint = Paint()
-    ..color = Colors.white38
+    ..color = AppColors.onSurfaceLow
     ..strokeWidth = 2
     ..style = PaintingStyle.stroke;
 
   final _secondaryDotPaint = Paint()
-    ..color = Colors.white38
+    ..color = AppColors.onSurfaceLow
     ..style = PaintingStyle.fill;
 
   /// 非监控区连线 = 全部连线 - 监控区连线。
@@ -144,7 +146,7 @@ class PosePainter extends CustomPainter {
         text: TextSpan(
           text: '${angle.toStringAsFixed(0)}°',
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.onSurface,
             fontSize: 13,
             fontWeight: FontWeight.bold,
           ),
